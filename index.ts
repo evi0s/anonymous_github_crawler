@@ -37,7 +37,7 @@ const fetchUrlFromCommandLine = (): string => {
 const crawler = async (path: string): Promise<AxiosResponse> => {
     try {
         return await axios
-            .get(`https://anonymous.4open.science${path}`, {
+            .get(`https://anonymous.4open.science${encodeURI(path)}`, {
                 headers: {
                     "accept": "application/json, text/plain, */*",
                     // "accept-encoding": "gzip, deflate, br",
@@ -52,7 +52,8 @@ const crawler = async (path: string): Promise<AxiosResponse> => {
                     "sec-fetch-site": "same-origin",
                     "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36"
                 },
-                decompress: true
+                decompress: true,
+                responseType: 'arraybuffer'
             });
     } catch (err) {
         throw new Error(`[crawler] err in fetch file: ${path}, reason: ${err}`);
@@ -69,7 +70,7 @@ const getRepoName = (url: string): string => {
 }
 
 const getRepoStructure = async (repoName: string): Promise<Tree> => {
-    return (await crawler(`/api/repo/${repoName}/files`)).data as Tree;
+    return JSON.parse((await crawler(`/api/repo/${repoName}/files`)).data) as Tree;
 }
 
 const createFileTree = async (repoName: string, tree: Tree) => {
@@ -106,7 +107,7 @@ const downloadFile = async (repoName: string, path: string, tree: Tree) => {
             continue;
         }
 
-        const dist = `${process.cwd()}/${repoName}/${path}/${encodeURI(element)}`;
+        const dist = `${process.cwd()}/${repoName}/${path}/${element}`;
         try {
             await promises.stat(dist)
         } catch (e) {
